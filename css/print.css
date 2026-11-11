@@ -1,0 +1,5 @@
+/* The printable sheet. */
+@media print {
+  .app-header, .app-sidebar, .btn { display: none !important; }
+  body { background: #fff; color: #000; }
+}

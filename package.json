@@ -1,0 +1,11 @@
+{
+  "name": "contrast-bench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WCAG contrast, palette geometry and category separation for brand and channel colours.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python -m http.server 8080"
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#1f2d3d"/>
+  <!-- TODO: draw this app's subject on the navy ground. Keep the ground and the rx. -->
+  <rect x="14" y="26" width="36" height="12" rx="4" fill="#7fabc7"/>
+</svg>

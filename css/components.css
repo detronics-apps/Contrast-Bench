@@ -1,0 +1,33 @@
+/* Buttons, sections, banners, modals. Tokens only. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+}
+.btn {
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { background: var(--panel-3); }
+
+/* --accent is ~2.3:1 on white: it fills and outlines, it never carries text.
+   Accent-coloured text uses --accent-strong. */
+.btn-primary {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-ink);
+}
+.value { font-family: var(--font-mono); }
+
+/* Status banners always use the semantic pair, never a one-off tint. */
+.banner { border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); border: 1px solid; }
+.banner-ok     { color: var(--ok);     background: var(--ok-soft);     border-color: var(--ok); }
+.banner-warn   { color: var(--warn);   background: var(--warn-soft);   border-color: var(--warn); }
+.banner-danger { color: var(--danger); background: var(--danger-soft); border-color: var(--danger); }
