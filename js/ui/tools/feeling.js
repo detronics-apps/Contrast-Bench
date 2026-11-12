@@ -23,7 +23,7 @@ export function render(host, ctx) {
     : 'This palette is entirely neutral, so there is no hue to read.' }));
 
   // --- the wheel
-  const wheelPanel = el('section', { class: 'panel' });
+  const wheelPanel = el('section', { class: 'panel panel--flush' });
   wheelPanel.appendChild(el('div', { class: 'panel__head' }, [
     el('div', {}, [
       el('p', { class: 'eyebrow', text: 'The wheel' }),
@@ -46,7 +46,7 @@ export function render(host, ctx) {
   // --- what the palette says
   if (register) {
     host.appendChild(el('h2', { class: 'sectiontitle', text: 'What this palette communicates' }));
-    host.appendChild(el('section', { class: 'panel' }, [
+    host.appendChild(el('section', { class: 'panel panel--flush' }, [
       el('div', { class: 'panel__body' }, [
         el('p', { class: 'registerline', text: register.body }),
       ]),
@@ -127,7 +127,7 @@ export function renderAside(host, ctx) {
   const chromatic = geometries(colors).filter((g) => !g.neutral);
   if (!chromatic.length) return;
 
-  host.appendChild(el('section', { class: 'panel' }, [
+  host.appendChild(el('section', { class: 'panel panel--flush' }, [
     el('div', { class: 'panel__head' }, [el('div', {}, [
       el('p', { class: 'eyebrow', text: 'Where your colours sit' }),
       el('p', { class: 'note', text: 'Nearest anchor, and how strongly it applies.' }),

@@ -175,7 +175,7 @@ export function renderAside(host, ctx) {
     ]),
   ])));
 
-  host.appendChild(el('section', { class: 'panel' }, [
+  host.appendChild(el('section', { class: 'panel panel--flush' }, [
     el('div', { class: 'panel__head' }, [el('div', {}, [
       el('p', { class: 'eyebrow', text: 'Without colour' }),
       el('p', { class: 'note', text: 'Printed, photocopied, or seen with severe colour blindness.' }),
@@ -184,7 +184,7 @@ export function renderAside(host, ctx) {
   ]));
 
   for (const c of a.cvd) {
-    host.appendChild(el('section', { class: 'panel' }, [
+    host.appendChild(el('section', { class: 'panel panel--flush' }, [
       el('div', { class: 'panel__head' }, [el('div', {}, [
         el('p', { class: 'eyebrow', text: c.type }),
         el('p', { class: 'note', text: c.collapses
@@ -203,7 +203,7 @@ export function renderAside(host, ctx) {
 function section(title, note, body) {
   return el('div', {}, [
     el('h2', { class: 'sectiontitle', text: title }),
-    el('section', { class: 'panel' }, [
+    el('section', { class: 'panel panel--flush' }, [
       note ? el('div', { class: 'panel__head' }, [el('p', { class: 'note', text: note })]) : null,
       el('div', { class: 'panel__body' }, [body]),
     ]),

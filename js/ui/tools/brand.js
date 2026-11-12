@@ -29,7 +29,7 @@ export function render(host, ctx) {
 
   // --- pairing analysis
   const view = ui.view ?? 'matrix';
-  const panel = el('section', { class: 'panel' });
+  const panel = el('section', { class: 'panel panel--flush' });
   panel.appendChild(el('div', { class: 'panel__head' }, [
     el('div', {}, [
       el('p', { class: 'eyebrow', text: 'Pairing analysis' }),
@@ -109,7 +109,7 @@ export function render(host, ctx) {
     el('td', { class: 'alloc__why', text: r.why }),
   ]))));
 
-  const allocPanel = el('section', { class: 'panel' });
+  const allocPanel = el('section', { class: 'panel panel--flush' });
   allocPanel.appendChild(el('div', { class: 'panel__head' }, [
     el('div', {}, [
       el('p', { class: 'eyebrow', text: 'Allocation' }),
@@ -136,11 +136,11 @@ export function render(host, ctx) {
   for (const r of recs) {
     const act = el('span', { class: 'reco__act' });
     if (r.add) {
-      act.appendChild(el('button', { class: 'btn btn-primary', type: 'button', text: 'Add',
+      act.appendChild(el('button', { class: 'btn btn--primary', type: 'button', text: 'Add',
         on: { click: () => ctx.addColor(r.add) } }));
     }
     if (r.addAll) {
-      act.appendChild(el('button', { class: 'btn btn-primary', type: 'button',
+      act.appendChild(el('button', { class: 'btn btn--primary', type: 'button',
         text: `Add all ${r.addAll.length}`, on: { click: () => ctx.addColors(r.addAll) } }));
     }
     if (r.remove) {
@@ -173,7 +173,7 @@ export function renderAside(host, ctx) {
   if (!fg || !bg || fg === bg) return;
 
   const target = ui.target ?? 4.5;
-  host.appendChild(el('section', { class: 'panel' }, [
+  host.appendChild(el('section', { class: 'panel panel--flush' }, [
     inspector(fg, bg, {
       target,
       suggestions: suggestions(fg.hex, bg.hex, target),
@@ -187,7 +187,7 @@ export function renderAside(host, ctx) {
 function section(title, note, body) {
   return el('div', {}, [
     el('h2', { class: 'sectiontitle', text: title }),
-    el('section', { class: 'panel' }, [
+    el('section', { class: 'panel panel--flush' }, [
       note ? el('div', { class: 'panel__head' }, [
         el('p', { class: 'note', text: note })]) : null,
       el('div', { class: 'panel__body' }, [body]),

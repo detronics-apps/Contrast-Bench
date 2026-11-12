@@ -1,34 +1,53 @@
-// The palette editor and the exports. Shared by every tool.
+// The palette editor and the exports, in house folding sections.
 
 import { el, select, toast, download } from './dom.js';
 import { harvest, normalise, isColor } from '../color.js';
 
-/**
- * Every add has a remove, and every supplied name can be reworded.
- * `ctx` supplies the palette plus the mutation callbacks.
- */
+/** A folding section with the house head/body structure. */
+function section(id, title, body, { open = true, summary = null } = {}) {
+  const host = el('section', { class: 'section', dataset: { open: String(open), section: id } });
+  const head = el('button', {
+    class: 'section__head', type: 'button',
+    'aria-expanded': String(open),
+    on: {
+      click: () => {
+        const next = host.dataset.open !== 'true';
+        host.dataset.open = String(next);
+        head.setAttribute('aria-expanded', String(next));
+      },
+    },
+  }, [
+    el('span', { class: 'section__chevron', 'aria-hidden': 'true', text: '›' }),
+    el('span', { class: 'section__title', text: title }),
+    summary ? el('span', { class: 'section__summary', text: summary }) : null,
+  ]);
+  host.append(head, el('div', { class: 'section__body' }, [body]));
+  return host;
+}
+
+/** Every add has a remove, and every supplied name can be reworded. */
 export function paletteEditor(ctx) {
   const { palette, state, ctl } = ctx;
 
-  const chipsHost = el('div', { class: 'chips' }, palette.colors.map((c, i) => el('div', {
-    class: 'chip2',
+  const swatches = el('div', { class: 'swatches' }, palette.colors.map((c, i) => el('div', {
+    class: 'swatch',
   }, [
-    el('span', { class: 'chip2__hold' }, [
-      el('span', { class: 'chip2__sw', style: { background: c.hex } }),
+    el('span', { class: 'swatch__hold' }, [
+      el('span', { class: 'swatch__sw', style: { background: c.hex } }),
       el('input', {
         type: 'color', value: c.hex, 'aria-label': `Pick colour for ${c.name}`,
         dataset: { field: `pick-${i}` },
         on: { input: (e) => ctl.editColor(i, { hex: e.target.value }) },
       }),
     ]),
-    el('span', { class: 'chip2__fields' }, [
+    el('span', { class: 'swatch__fields' }, [
       el('input', {
-        type: 'text', class: 'chip2__nm', value: c.name, 'aria-label': 'Name',
+        type: 'text', class: 'swatch__nm', value: c.name, 'aria-label': 'Name',
         dataset: { field: `name-${i}` },
         on: { change: (e) => ctl.editColor(i, { name: e.target.value || 'Untitled' }) },
       }),
       el('input', {
-        type: 'text', class: 'chip2__hx', value: c.hex, 'aria-label': 'Hex value',
+        type: 'text', class: 'swatch__hx', value: c.hex, 'aria-label': 'Hex value',
         dataset: { field: `hex-${i}` },
         on: {
           change: (e) => {
@@ -43,8 +62,8 @@ export function paletteEditor(ctx) {
       }),
     ]),
     el('button', {
-      class: 'chip2__kill', type: 'button', title: `Remove ${c.name}`,
-      'aria-label': `Remove ${c.name}`, text: 'x',
+      class: 'swatch__kill', type: 'button', title: `Remove ${c.name}`,
+      'aria-label': `Remove ${c.name}`, text: '×',
       on: { click: () => ctl.removeAt(i) },
     }),
   ])));
@@ -54,63 +73,61 @@ export function paletteEditor(ctx) {
     placeholder: 'Paste anything containing hex codes - #1f2d3d, 7fabc7, rgb(69,75,82).',
   });
 
-  const pasteRow = el('div', { class: 'pasterow', hidden: true }, [
+  const pasteRow = el('div', { hidden: true }, [
     paste,
-    el('div', { class: 'pasterow__acts' }, [
-      el('button', { class: 'btn btn-primary', type: 'button', text: 'Replace',
+    el('div', { class: 'row', style: { marginTop: 'var(--space-2)' } }, [
+      el('button', { class: 'btn', type: 'button', text: 'Replace',
         on: { click: () => applyPaste(paste, ctl, true) } }),
       el('button', { class: 'btn', type: 'button', text: 'Append',
         on: { click: () => applyPaste(paste, ctl, false) } }),
-      el('button', { class: 'btn', type: 'button', text: 'Cancel',
-        on: { click: () => { pasteRow.hidden = true; } } }),
     ]),
   ]);
 
-  const tools = el('div', { class: 'tools' }, [
-    el('button', { class: 'btn', type: 'button', text: '+ Add colour',
-      on: { click: () => ctl.addColor({ name: `Colour ${palette.colors.length + 1}`, hex: '#7fabc7' }) } }),
-    el('button', { class: 'btn', type: 'button', text: 'Paste hex list',
-      on: { click: () => { pasteRow.hidden = !pasteRow.hidden; if (!pasteRow.hidden) paste.focus(); } } }),
-    window.EyeDropper
-      ? el('button', { class: 'btn', type: 'button', text: 'Eyedropper',
-        on: { click: () => pickFromScreen(ctl) } })
-      : null,
+  const body = el('div', {}, [
+    el('div', { class: 'field' }, [
+      el('label', { class: 'field__label', text: 'Working palette' }),
+      select(
+        state.palettes.map((p) => ({ value: p.id, label: p.name })),
+        state.activeId,
+        (id) => ctl.setActive(id),
+        { dataset: { field: 'palette-select' } },
+      ),
+    ]),
+    el('div', { class: 'field' }, [
+      el('label', { class: 'field__label', text: 'Name' }),
+      el('input', {
+        type: 'text', class: 'input', value: palette.name, 'aria-label': 'Palette name',
+        dataset: { field: 'palette-name' },
+        on: { change: (e) => ctl.renamePalette(e.target.value || 'Untitled') },
+      }),
+    ]),
+    el('div', { class: 'row' }, [
+      el('button', { class: 'btn', type: 'button', text: 'New', title: 'Start an empty palette',
+        on: { click: () => ctl.newPalette() } }),
+      el('button', { class: 'btn', type: 'button', text: 'Duplicate',
+        on: { click: () => ctl.duplicatePalette() } }),
+      el('button', { class: 'btn', type: 'button', text: 'Delete',
+        on: { click: () => ctl.deletePalette() } }),
+    ]),
+    swatches,
+    el('div', { class: 'row' }, [
+      el('button', { class: 'btn', type: 'button', text: 'Add colour',
+        on: { click: () => ctl.addColor({ name: `Colour ${palette.colors.length + 1}`, hex: '#6fa8bf' }) } }),
+      el('button', { class: 'btn', type: 'button', text: 'Paste list',
+        on: { click: () => { pasteRow.hidden = !pasteRow.hidden; if (!pasteRow.hidden) paste.focus(); } } }),
+      window.EyeDropper
+        ? el('button', { class: 'btn', type: 'button', text: 'Pick',
+          title: 'Pick a colour from anywhere on screen',
+          on: { click: () => pickFromScreen(ctl) } })
+        : null,
+    ]),
+    pasteRow,
   ]);
 
-  return el('section', { class: 'panel' }, [
-    el('div', { class: 'panel__head' }, [
-      el('div', {}, [
-        el('p', { class: 'eyebrow', text: 'Palette' }),
-        el('p', { class: 'note',
-          text: `${palette.colors.length} colours - ${(palette.colors.length * (palette.colors.length - 1)) / 2} unique pairs` }),
-      ]),
-    ]),
-    el('div', { class: 'panel__body' }, [
-      el('div', { class: 'field' }, [
-        el('label', { class: 'field__label', text: 'Working palette' }),
-        select(
-          state.palettes.map((p) => ({ value: p.id, label: `${p.name} (${p.kind})` })),
-          state.activeId,
-          (id) => ctl.setActive(id),
-          { dataset: { field: 'palette-select' } },
-        ),
-      ]),
-      el('div', { class: 'tools' }, [
-        el('input', {
-          type: 'text', class: 'input', value: palette.name, 'aria-label': 'Palette name',
-          dataset: { field: 'palette-name' },
-          on: { change: (e) => ctl.renamePalette(e.target.value || 'Untitled') },
-        }),
-        el('button', { class: 'btn', type: 'button', text: 'Duplicate',
-          on: { click: () => ctl.duplicatePalette() } }),
-        el('button', { class: 'btn', type: 'button', text: 'Delete',
-          on: { click: () => ctl.deletePalette() } }),
-      ]),
-      chipsHost,
-      tools,
-      pasteRow,
-    ]),
-  ]);
+  const pairs = (palette.colors.length * (palette.colors.length - 1)) / 2;
+  return section('palette', 'Palette', body, {
+    summary: `${palette.colors.length} colours - ${pairs} pairs`,
+  });
 }
 
 function applyPaste(textarea, ctl, replace) {
@@ -131,8 +148,8 @@ async function pickFromScreen(ctl) {
   } catch { /* dismissed */ }
 }
 
-/** Share link, JSON save/load and print. The last section of the sidebar, never the footer. */
-export function exports_(ctx) {
+/** Share, save and print. The last section of the sidebar, never the footer. */
+export function exportsSection(ctx) {
   const { state, palette, ctl } = ctx;
 
   const fileInput = el('input', {
@@ -152,33 +169,31 @@ export function exports_(ctx) {
     },
   });
 
-  return el('section', { class: 'panel' }, [
-    el('div', { class: 'panel__head' }, [el('div', {}, [
-      el('p', { class: 'eyebrow', text: 'Share and save' }),
-      el('p', { class: 'note', text: 'A share link puts the palette after the #, which browsers '
-        + 'never send to a server.' }),
-    ])]),
-    el('div', { class: 'panel__body' }, [
-      el('div', { class: 'tools' }, [
-        el('button', { class: 'btn btn-primary', type: 'button', text: 'Copy share link',
-          on: { click: () => ctl.copyShareLink() } }),
-        el('button', { class: 'btn', type: 'button', text: 'Save file',
-          on: {
-            click: () => {
-              const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-              download(blob, `${palette.name.replace(/[^\w-]+/g, '-').toLowerCase()}.json`);
-            },
-          } }),
-        el('button', { class: 'btn', type: 'button', text: 'Open file',
-          on: { click: () => fileInput.click() } }),
-        el('button', { class: 'btn', type: 'button', text: 'Copy analysis',
-          on: { click: () => ctl.copyAnalysis() } }),
-        el('button', { class: 'btn', type: 'button', text: 'Print',
-          on: { click: () => window.print() } }),
-      ]),
-      el('p', { class: 'note', text: 'Copy analysis puts the measured findings on the clipboard as '
-        + 'plain text - paste it anywhere you want the judgement call discussed.' }),
-      fileInput,
+  const body = el('div', {}, [
+    el('button', { class: 'btn btn--primary', type: 'button', text: 'Copy share link',
+      on: { click: () => ctl.copyShareLink() } }),
+    el('p', { class: 'note', text: 'The palette rides after the # in the URL, which browsers '
+      + 'never send to a server.' }),
+    el('div', { class: 'row', style: { marginTop: 'var(--space-3)' } }, [
+      el('button', { class: 'btn', type: 'button', text: 'Save file',
+        on: {
+          click: () => {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            download(blob, `${palette.name.replace(/[^\w-]+/g, '-').toLowerCase()}.json`);
+          },
+        } }),
+      el('button', { class: 'btn', type: 'button', text: 'Open file',
+        on: { click: () => fileInput.click() } }),
     ]),
+    el('div', { class: 'row', style: { marginTop: 'var(--space-2)' } }, [
+      el('button', { class: 'btn', type: 'button', text: 'Copy analysis',
+        title: 'Every measured finding as plain text',
+        on: { click: () => ctl.copyAnalysis() } }),
+      el('button', { class: 'btn', type: 'button', text: 'Print',
+        on: { click: () => window.print() } }),
+    ]),
+    fileInput,
   ]);
+
+  return section('exports', 'Share and save', body, { open: false });
 }

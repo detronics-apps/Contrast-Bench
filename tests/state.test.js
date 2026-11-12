@@ -14,14 +14,28 @@ test('the default model opens on a worked example of each mode', () => {
   assert.equal(defaults.palettes[0].kind, 'brand');
   assert.equal(defaults.palettes[1].kind, 'channel');
   assert.equal(defaults.activeId, SEED_BRAND.id);
-  assert.equal(activeColors(defaults).length, 8);
+  assert.equal(activeColors(defaults).length, 6);
 });
 
 test('seeded palettes carry FIXED ids so they cannot double', () => {
   // Two loaders seeding at the same moment with random ids is a known trap.
-  assert.equal(SEED_BRAND.id, 'seed-detronics');
-  assert.equal(SEED_CHANNEL.id, 'seed-families');
+  assert.equal(SEED_BRAND.id, 'demo-brand');
+  assert.equal(SEED_CHANNEL.id, 'demo-categories');
   assert.notEqual(newId(), newId());
+});
+
+test('the shipped palettes are demonstrations, not anybody real', () => {
+  // This is a public tool. The first thing a stranger sees must teach the app,
+  // not publish an identity that is neither theirs nor ours to show.
+  for (const p of defaults.palettes) {
+    assert.match(p.name, /^Demo /, `${p.name} does not announce itself as a demo`);
+  }
+  const shipped = defaults.palettes.flatMap((p) => p.colors.map((c) => c.hex.toLowerCase()));
+  // None of the real Detronics brand or content-family colours may appear.
+  for (const own of ['#1f2d3d', '#7fabc7', '#d7e5f2', '#e9eaec', '#cdd1d2', '#454b52',
+    '#a18ac8', '#4f9d73', '#526f91', '#e9a16b', '#d4b96f']) {
+    assert.ok(!shipped.includes(own), `${own} is a real brand colour and must not ship`);
+  }
 });
 
 test('migrate handles nothing, rubbish and the current shape', () => {

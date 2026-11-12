@@ -1,33 +1,82 @@
-/* Header, viewport, sidebar, footer. Tokens only - no literal colours.
-   Class vocabulary matches Bench-Calculator, so css/patterns.css applies. */
+/* Page frame: header, viewport + sidebar, footer. */
+
 *, *::before, *::after { box-sizing: border-box; }
+
 html, body { height: 100%; }
 
 body {
   margin: 0;
-  font: 400 14px/1.5 var(--font);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--text);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* ---------------------------------------------------------------- header */
+
 .app-header {
   flex: 0 0 auto;
   height: var(--header-h);
-  display: flex; align-items: center; gap: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
   padding: 0 var(--space-4);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
-  position: relative; z-index: 20;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 20;
 }
 
-.brand { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
-.brand__logo { height: 26px; width: auto; display: block; border-radius: 5px; }
-.brand__sep { width: 1px; height: 22px; background: var(--border); }
-.brand__tool { font-weight: 600; color: var(--text-dim); white-space: nowrap; }
-.header-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* The logo carries its own navy plate, so it needs a hairline in dark mode
+   to stay distinct from the header behind it. */
+.brand__logo {
+  height: 26px;
+  width: auto;
+  display: block;
+  border-radius: 5px;
+}
+
+:root[data-theme="dark"] .brand__logo,
+:root:not([data-theme="light"]) .brand__logo { outline: 1px solid var(--border); }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .brand__logo { outline: none; }
+}
+
+.brand__tool {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.brand__sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------------ main */
 
 .app-main {
   flex: 1 1 auto;
@@ -37,44 +86,166 @@ body {
 }
 
 .viewport {
-  display: flex; flex-direction: column; min-width: 0;
-  padding: var(--space-4); gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-4);
+  gap: var(--space-4);
   overflow-y: auto;
 }
 
+/*
+ * Flex items shrink by default, so in a short window the browser was
+ * compressing the tab bar and the diagram rather than letting the column
+ * scroll. Nothing here may shrink: the stage grows into spare room, and
+ * everything else keeps the height its content needs.
+ */
+.viewport > * { flex: 0 0 auto; }
+
 .viewport__stage {
-  display: flex; align-items: center; justify-content: center;
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 240px;
   padding: var(--space-5) var(--space-4);
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow-x: auto;
 }
 
-.viewport__stage > * { width: 100%; max-width: 780px; }
+.viewport__stage > * {
+  width: 100%;
+  max-width: 780px;
+}
+
+.viewport__stage svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* The palette strip that appears when a band is selected. */
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--border);
+}
+
+.palette__label {
+  flex: 1 0 100%;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: var(--space-1);
+}
+
+.palette__swatch {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  position: relative;
+}
+
+.palette__swatch:hover { transform: scale(1.08); }
+.palette__swatch[aria-pressed="true"] { border-color: var(--accent-strong); box-shadow: 0 0 0 3px var(--accent-soft); }
+.palette__swatch span { font-size: 9px; font-weight: 700; }
 
 .sidebar {
   border-left: 1px solid var(--border);
   background: var(--panel);
   overflow-y: auto;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
+
+.sidebar__scroll { flex: 1 1 auto; }
+
+/* ---------------------------------------------------------------- footer */
 
 .app-footer {
   flex: 0 0 auto;
-  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
   padding: var(--space-3) var(--space-4);
   background: var(--panel);
   border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--text-faint);
+  font-size: 12px;
+  color: var(--text-faint);
 }
 
-.app-footer nav { margin-left: auto; display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.app-footer nav {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Long/short label pairs, swapped by the responsive rules below. */
+.btn-label--short { display: none; }
+
+/* ------------------------------------------------------------ responsive */
 
 @media (max-width: 1040px) {
-  .app-main { grid-template-columns: minmax(0, 1fr); }
-  .sidebar { border-left: none; border-top: 1px solid var(--border); }
-  .viewport, .sidebar { overflow-y: visible; }
+  .app-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .viewport { overflow-y: visible; }
+  .sidebar { overflow-y: visible; }
   body { height: auto; }
+}
+
+@media (max-width: 700px) {
+  /* The full labels cannot fit beside the logo, so shorten them. */
+  .btn-label--long { display: none; }
+  .btn-label--short { display: inline; }
+}
+
+@media (max-width: 560px) {
+  .brand__tool, .brand__sep { display: none; }
+  .viewport { padding: var(--space-3); }
+
+  /* Give every part of the header permission to shrink, and let the logo be
+     the first thing to give way - it is decorative next to the controls. */
+  .app-header {
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+  }
+
+  .brand { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+
+  /* The logo sits inside an anchor, so the anchor is the flex item - it has to
+     carry the shrink rules or the image keeps its full intrinsic width and
+     shoves the action buttons over the wordmark. */
+  .brand__home { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+
+  .brand__logo {
+    height: 22px;
+    max-width: 100%;
+    flex: 0 1 auto;
+    min-width: 0;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .header-actions { flex: 0 0 auto; gap: var(--space-1); }
+  .header-actions .btn { padding: 6px 8px; }
 }

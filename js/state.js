@@ -13,34 +13,42 @@ const KEY = 'detronics-contrast-bench';
 /** Bump when the shape changes, and add a step to `migrate`. */
 export const MODEL_VERSION = 2;
 
-/** The brand palette the app opens on - a worked example that raises real findings. */
+// The app opens on demonstration palettes, not on anybody's real brand.
+//
+// This is a public tool, so the first thing a stranger sees has to be a worked
+// example that teaches the app - not someone else's identity, which is both
+// meaningless to them and not ours to publish. Your own palettes live in this
+// browser and in a file you keep; load one from the picker or with Open file.
+//
+// Both demos are built to FAIL in instructive ways. A palette with no findings
+// demonstrates nothing.
+
+/** A plausible brand set carrying the three faults the app is best at naming. */
 export const SEED_BRAND = Object.freeze({
-  id: 'seed-detronics',
-  name: 'Detronics brand',
+  id: 'demo-brand',
+  name: 'Demo brand - Harbour',
   kind: 'brand',
   colors: [
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#ffffff' },
-    { name: 'Ink Navy', hex: '#1f2d3d' },
-    { name: 'Slate', hex: '#454b52' },
-    { name: 'Steel Blue', hex: '#7fabc7' },
-    { name: 'Mist', hex: '#d7e5f2' },
-    { name: 'Fog', hex: '#e9eaec' },
-    { name: 'Ash', hex: '#cdd1d2' },
+    { name: 'Deep', hex: '#13242e' },      // the ink
+    { name: 'Slate', hex: '#3f4b53' },     // secondary ink
+    { name: 'Harbour', hex: '#6fa8bf' },   // the accent - too light to carry text
+    { name: 'Shallow', hex: '#cfe2ea' },   // tinted surface
+    { name: 'Haze', hex: '#e8ebec' },      // near-duplicate of Shallow
+    { name: 'Paper', hex: '#ffffff' },
   ],
 });
 
-/** The content families, as a worked example of the other mode. */
+/** A category set where two markers collapse - the point of Categories mode. */
 export const SEED_CHANNEL = Object.freeze({
-  id: 'seed-families',
-  name: 'Content families',
+  id: 'demo-categories',
+  name: 'Demo categories - Status',
   kind: 'channel',
   colors: [
-    { name: 'Thinking', hex: '#a18ac8' },
-    { name: 'Building', hex: '#4f9d73' },
-    { name: 'Engineering', hex: '#526f91' },
-    { name: 'Family', hex: '#e9a16b' },
-    { name: 'Faith', hex: '#d4b96f' },
+    { name: 'Alert', hex: '#c0392b' },
+    { name: 'Caution', hex: '#d68910' },
+    { name: 'Normal', hex: '#1e8449' },
+    { name: 'Info', hex: '#2471a3' },
+    { name: 'Planned', hex: '#7d3c98' },
   ],
 });
 
