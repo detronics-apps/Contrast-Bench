@@ -39,7 +39,11 @@
 .bullets li { font-size: 13px; color: var(--text-dim); line-height: 1.55; margin-bottom: var(--space-2); }
 
 .faq { border-bottom: 1px solid var(--border); padding: var(--space-2) 0; }
-.faq summary { cursor: pointer; font-size: 13px; font-weight: 500; }
+.faq summary {
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  display: flex; align-items: baseline; gap: var(--space-3);
+}
+.faq summary::-webkit-details-marker { display: none; }
 .faq p { margin: var(--space-2) 0 0; font-size: 12px; color: var(--text-dim); line-height: 1.55; }
 
 /* ---------------------------------------------------------------- tiles */
@@ -69,7 +73,10 @@
 
 .matrix { border-collapse: separate; border-spacing: 3px; }
 .matrix th { font-weight: 500; text-align: left; padding: 0; }
-.matrix__corner { position: sticky; left: 0; z-index: 3; background: var(--panel); }
+.matrix__corner {
+  position: sticky; left: 0; z-index: 3; background: var(--panel);
+  padding-left: var(--space-3) !important; padding-right: var(--space-3) !important;
+}
 .matrix__corner span {
   display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
   text-transform: uppercase; color: var(--text-faint); padding-bottom: var(--space-1);
@@ -77,7 +84,7 @@
 .matrix__colhead { min-width: 98px; }
 .matrix__rowhead {
   position: sticky; left: 0; z-index: 2; background: var(--panel);
-  padding-right: var(--space-2) !important;
+  padding-left: var(--space-3) !important; padding-right: var(--space-3) !important;
   box-shadow: 6px 0 6px -6px rgb(0 0 0 / 0.16); white-space: nowrap;
 }
 .matrix__dot {
@@ -338,7 +345,7 @@
 
 .wheelbody { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
 .wheelwrap { color: var(--text); }
-.wheel { width: 100%; height: auto; display: block; max-width: 420px; }
+.wheel { width: 100%; height: auto; display: block; max-width: 520px; }
 .wheel__sector { cursor: pointer; }
 .wheel__sector:hover { filter: brightness(1.08); }
 .wheel__sector:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
@@ -457,3 +464,15 @@
   /* Footer links are text, so they get vertical padding rather than a box. */
   .linkish { padding: 13px 0; }
 }
+
+/* ---------------------------------------------------------------- help search */
+
+.helpresults { display: grid; gap: 0; }
+/* Fixed width rather than a minimum: "QUESTION" is wider than "HOW TO", and a
+   min-width let the longer one butt straight up against the title. */
+.faq__kind {
+  flex: 0 0 66px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.faq p { padding-left: calc(66px + var(--space-3)); }

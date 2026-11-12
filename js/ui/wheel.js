@@ -12,6 +12,19 @@ const CX = 200, CY = 200;
 const R_OUT = 148, R_IN = 42, R_LABEL = 172;
 const TOP_HUE = 60;
 
+/*
+ * The viewBox is wider than the wheel, and deliberately so.
+ *
+ * Labels sit at x = CX +/- R_LABEL*sin(theta), which puts the two at the
+ * horizontal extremes at x = 34 and x = 366. Anchored outward, a word like
+ * "Excitement" then runs to x = -34 and "Happiness" to x = 428 - both outside a
+ * 0..400 box, so both were clipped mid-word. The text needs room, and the honest
+ * place to give it is the box rather than by shrinking the wheel or truncating
+ * the words. Vertically nothing overhangs, so only the sides are widened.
+ */
+const PAD_X = 92;
+const VIEW = `${-PAD_X} 0 ${400 + PAD_X * 2} 400`;
+
 /** Screen point for a hue at a radius. Hue 60 is at the top; hue increases clockwise. */
 function point(hue, radius) {
   const t = ((hue - TOP_HUE) * Math.PI) / 180;
@@ -40,7 +53,7 @@ function sectorPath(hueFrom, hueTo, rIn, rOut) {
  */
 export function emotionWheel({ colors = [], selected = null, onSelect = null, showPlots = true } = {}) {
   const root = svg('svg', {
-    viewBox: '0 0 400 400',
+    viewBox: VIEW,
     class: 'wheel',
     role: 'img',
     'aria-label': 'Emotion wheel: hue around the circle, saturation towards the edge',
