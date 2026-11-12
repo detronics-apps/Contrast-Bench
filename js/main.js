@@ -23,7 +23,7 @@ import * as ramp from './ui/tools/ramp.js';
 import * as channel from './ui/tools/channel.js';
 import * as feeling from './ui/tools/feeling.js';
 
-export const APP_VERSION = '0.5.0';
+export const APP_VERSION = '0.5.1';
 
 const TOOLS = { brand, ramp, channel, feeling };
 

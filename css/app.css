@@ -468,6 +468,7 @@
 @media (max-width: 640px) {
   /* Footer links are text, so they get vertical padding rather than a box. */
   .linkish { padding: 13px 0; }
+}
 /* ---------------------------------------------------------------- empty state */
 
 .empty__title { margin: 0 0 var(--space-2); font-size: 15px; font-weight: 650; }
