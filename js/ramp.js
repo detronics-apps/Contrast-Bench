@@ -10,8 +10,13 @@
 //
 // Pure.
 
-import { contrast, toOklch, fromOklch, deltaE, toGreyscale, luminance } from './color.js';
+import { contrast, toOklch, fromOklch, deltaE, toGreyscale, luminance, toHsl, hueGap } from './color.js';
 import { grade } from './wcag.js';
+
+/** A set of colours is a ramp when they share a hue and span a wide lightness range. */
+export const RAMP_HUE_TOLERANCE = 14;   // degrees
+export const RAMP_MIN_SPREAD = 40;      // OKLCh lightness points
+export const RAMP_MIN_STEPS = 4;
 
 /** Where a step can be used. The whole point of the ramp. */
 export const USE = Object.freeze({
@@ -93,14 +98,88 @@ export function againstNeutrals(ramp, neutrals = DEFAULT_NEUTRALS) {
 }
 
 /**
+ * Does this set of colours already form a ramp?
+ *
+ * A hand-built ramp is almost always better than a generated one - it was made by
+ * eye, in one hue, with the steps somebody actually wants to use. So when a palette
+ * IS a ramp, the app must measure those steps rather than invent its own.
+ *
+ * Returns null when it is not a ramp, which is itself the answer: a set of different
+ * hues is a palette, and belongs in Brand or Categories instead.
+ */
+export function detectRamp(colors) {
+  const hexes = colors.map((c) => (typeof c === 'string' ? c : c.hex));
+  if (hexes.length < RAMP_MIN_STEPS) return null;
+
+  // Hue is only meaningful where there is some colour; a pure grey ramp has none,
+  // and is still a ramp.
+  const hued = hexes.filter((h) => toHsl(h).S >= 10);
+  let hue = null;
+  if (hued.length) {
+    if (hued.length < 2 && hexes.length > 2) return null;
+    hue = circularMeanHue(hued.map((h) => toHsl(h).H));
+    const worst = Math.max(...hued.map((h) => hueGap(toHsl(h).H, hue)));
+    if (worst > RAMP_HUE_TOLERANCE) return null;
+  }
+
+  const ls = hexes.map((h) => toOklch(h).L);
+  const spread = Math.max(...ls) - Math.min(...ls);
+  if (spread < RAMP_MIN_SPREAD) return null;
+
+  const ordered = [...hexes].sort((a, b) => toOklch(a).L - toOklch(b).L);
+  return {
+    hue,
+    spread,
+    hueDrift: hued.length ? Math.max(...hued.map((h) => hueGap(toHsl(h).H, hue))) : 0,
+    steps: ordered,
+    count: ordered.length,
+  };
+}
+
+/** Mean of angles, which a plain average gets wrong across the 0/360 seam. */
+function circularMeanHue(hues) {
+  const x = hues.reduce((s, h) => s + Math.cos((h * Math.PI) / 180), 0);
+  const y = hues.reduce((s, h) => s + Math.sin((h * Math.PI) / 180), 0);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+/**
+ * Measure a ramp somebody supplied, step by step.
+ *
+ * `brandIndex` names which step is the brand colour. Left unset, the most chromatic
+ * step is taken, which is what a ramp's "the colour" almost always is - the ends are
+ * near-black and near-white by construction.
+ */
+export function analyseSteps(hexes, { neutrals = DEFAULT_NEUTRALS, brandIndex = null } = {}) {
+  if (!hexes.length) throw new Error('a ramp needs at least one step');
+  const ordered = [...hexes].sort((a, b) => toOklch(a).L - toOklch(b).L);
+
+  let brand = brandIndex;
+  if (brand === null || !ordered[brand]) {
+    let best = 0;
+    ordered.forEach((h, i) => { if (toOklch(h).C > toOklch(ordered[best]).C) best = i; });
+    brand = best;
+  }
+
+  const ramp = ordered.map((hex, i) => ({
+    ...makeStep(hex, toOklch(hex).L, i === brand),
+    index: i,
+  }));
+  return finish(ordered[brand], ramp, neutrals);
+}
+
+/**
  * The full reading for one colour on its own.
  *
- * `seedUse` is the finding that matters most: the flat brand colour somebody
+ * `seedStep` carries the finding that matters most: the flat brand colour somebody
  * picked is very often a fill, and the ramp says which step to reach for instead.
  */
 export function analyseRamp(seed, { steps = 9, neutrals = DEFAULT_NEUTRALS } = {}) {
-  const ramp = buildRamp(seed, { steps });
-  const seedStep = ramp.find((s) => s.isSeed);
+  return finish(seed, buildRamp(seed, { steps }), neutrals);
+}
+
+function finish(seed, ramp, neutrals) {
+  const seedStep = ramp.find((s) => s.isSeed) ?? ramp[0];
   const grid = againstNeutrals(ramp, neutrals);
 
   const forLight = ramp.filter((s) => s.textOnLight).sort((a, b) => b.lightness - a.lightness)[0] ?? null;
@@ -128,7 +207,12 @@ const f = (n, d = 2) => n.toFixed(d);
 
 /** Plain sentences about one colour, worst first. */
 export function rampFindings(seed, name = 'This colour', options = {}) {
-  const a = analyseRamp(seed, options);
+  return findingsFor(analyseRamp(seed, options), name);
+}
+
+/** The same sentences, for a ramp that was supplied rather than generated. */
+export function findingsFor(a, name = 'This colour') {
+  const seed = a.seed;
   const out = [];
   const s = a.seedStep;
 
