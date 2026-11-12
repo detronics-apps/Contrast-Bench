@@ -292,3 +292,41 @@ export function inspector(fg, bg, { target, suggestions, onCopy, onSwap, onTarge
 }
 
 export { grade, contrast, CRITERIA };
+
+/**
+ * What a tool shows when the palette cannot answer its question yet.
+ *
+ * Returns null when there are enough colours, so a caller reads as:
+ *   const gap = needColours(ctx, 2); if (gap) { host.appendChild(gap); return; }
+ *
+ * The comparisons yield to the user, not the other way round: an empty palette is
+ * a legitimate state somebody reached on purpose, not an error to be prevented.
+ */
+export function needColours(ctx, minimum, what = 'this comparison') {
+  const n = ctx.palette.colors.length;
+  if (n >= minimum) return null;
+
+  const addOne = el('button', {
+    class: 'btn btn--primary', type: 'button', text: 'Add a colour',
+    on: { click: () => ctx.addColor({ name: `Colour ${n + 1}`, hex: '#6fa8bf' }) },
+  });
+
+  return el('section', { class: 'panel' }, [
+    el('h3', { class: 'empty__title', text: n === 0 ? 'No colours yet' : 'One colour so far' }),
+    el('p', { class: 'empty__body', text: n === 0
+      ? 'The palette is empty. Add a colour here, paste a list of hex codes into the sidebar, or '
+        + 'open a saved palette file - the analysis starts as soon as there is something to read.'
+      : `${what} needs at least ${minimum} colours, and there is one. Add another and it appears. `
+        + 'Ramps and Emotion both work on a single colour, so those two still have something to say.' }),
+    el('div', { class: 'row', style: { justifyContent: 'flex-start' } }, [addOne]),
+  ]);
+}
+
+/** A labelled tile with a hint. The guide's mental-model and feature grids use these. */
+export function statTile(label, value, { hint = null, tone = null } = {}) {
+  return el('div', { class: `stat${tone ? ` stat--${tone}` : ''}` }, [
+    el('div', { class: 'stat__label', text: label }),
+    el('div', { class: 'stat__value', text: value }),
+    hint ? el('div', { class: 'stat__hint', text: hint }) : null,
+  ]);
+}

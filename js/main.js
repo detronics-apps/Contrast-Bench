@@ -9,18 +9,21 @@ import {
   load, save, saveSoon, state, activePalette, activeColors, shareLink,
   addPalette, removePalette, updatePalette, migrate, replaceState,
 } from './state.js';
-import { el, clear, toast, download } from './ui/dom.js';
+import { el, clear, toast, download, select } from './ui/dom.js';
 import { captureFocus, restoreFocus } from './ui/patterns.js';
 import { paletteEditor, exportsSection } from './ui/sidebar.js';
+import { statTile } from './ui/views.js';
 import { reportText } from './ui/report.js';
 import { legal } from './legal.js';
-import { searchHelp } from './help.js';
+import {
+  countMatches, filterHowtos, filterFaqs, filterIdeas, filterFeatures, PROCESS,
+} from './help.js';
 import * as brand from './ui/tools/brand.js';
 import * as ramp from './ui/tools/ramp.js';
 import * as channel from './ui/tools/channel.js';
 import * as feeling from './ui/tools/feeling.js';
 
-export const APP_VERSION = '0.4.0';
+export const APP_VERSION = '0.5.0';
 
 const TOOLS = { brand, ramp, channel, feeling };
 
@@ -261,59 +264,128 @@ function showWelcome() {
 
 // ---------------------------------------------------------------- help
 
-const KIND_LABEL = { howto: 'How to', faq: 'Question', feature: 'Feature' };
 
 function renderHelp(host) {
-  const results = el('div', { class: 'helpresults' });
+  const q = () => state.ui.helpQuery ?? '';
+  const redraw = () => { clear(host); renderHelp(host); };
 
-  const draw = (query) => {
-    clear(results);
-    const hits = searchHelp(query);
-
-    if (!hits.length) {
-      results.appendChild(el('p', { class: 'note',
-        text: `Nothing matches "${query}". Try the words you would use yourself - "colour blind", `
-          + '"photocopy", "how much", "mood" and "pantone" all find something.' }));
-      return;
-    }
-    if (query.trim()) {
-      results.appendChild(el('p', { class: 'note',
-        text: `${hits.length} ${hits.length === 1 ? 'topic' : 'topics'} for "${query}".` }));
-    }
-    for (const { topic } of hits) {
-      results.appendChild(el('details', { class: 'faq', open: Boolean(query.trim()) }, [
-        el('summary', {}, [
-          el('span', { class: 'faq__kind', text: KIND_LABEL[topic.kind] }),
-          topic.title,
-        ]),
-        el('p', { text: topic.body }),
-      ]));
-    }
+  const search = (value) => {
+    state.ui.helpQuery = value;
+    saveSoon();
+    redraw();
+    const box = document.querySelector('[data-field="help-search"]');
+    if (box) { box.focus({ preventScroll: true }); box.setSelectionRange(value.length, value.length); }
   };
 
   host.appendChild(el('h2', { class: 'sectiontitle', text: 'How to use this' }));
+
+  // --- New here? The welcome and the guide are the same content at two moments.
+  host.appendChild(el('section', { class: 'panel' }, [
+    el('h3', { class: 'guide__h', text: 'New here?' }),
+    el('p', { class: 'note', text: 'A short tour of where to start - the same one shown the '
+      + 'first time the app was opened.' }),
+    el('div', { class: 'row', style: { justifyContent: 'flex-start', marginTop: 'var(--space-3)' } }, [
+      el('button', { class: 'btn btn--primary', type: 'button', text: 'Show me around',
+        on: { click: showWelcome } }),
+    ]),
+  ]));
+
+  // --- a. One search over everything, with the user-language translator.
+  const found = countMatches(q());
   host.appendChild(el('section', { class: 'panel' }, [
     el('div', { class: 'field' }, [
-      el('label', { class: 'field__label', for: 'help-search', text: 'Search the help' }),
+      el('label', { class: 'field__label', for: 'help-search', text: 'Search the guide' }),
       el('input', {
         type: 'search', class: 'input', id: 'help-search', dataset: { field: 'help-search' },
-        placeholder: 'Try "colour blind", "how much", "pantone", "mood"',
-        value: state.ui.helpQuery ?? '',
-        on: {
-          // Searching is not a state change worth re-rendering the page for, so
-          // this redraws its own results and never calls render().
-          input: (e) => { state.ui.helpQuery = e.target.value; draw(e.target.value); saveSoon(); },
-        },
+        placeholder: 'e.g. colour blind, how much, photocopy, mood',
+        value: q(),
+        on: { input: (e) => search(e.target.value) },
       }),
-      el('p', { class: 'field__hint',
-        text: 'It searches what you mean, not only what you typed: "daltonism" finds the '
-          + 'colour-vision page, "60 30 10" finds allocation.' }),
+      el('p', { class: 'field__hint', text: q().trim()
+        ? `${found} ${found === 1 ? 'entry' : 'entries'} match "${q()}" across the how-tos, `
+          + 'questions, ideas and features below.'
+        : 'It searches what you mean, not only what you typed: "daltonism" finds the '
+          + 'colour-vision answers, "60 30 10" finds allocation, "ran out of room" finds '
+          + 'nothing because that is not what this app does.' }),
     ]),
-    results,
+    q().trim() && found === 0
+      ? el('p', { class: 'note', text: 'Nothing matches. Every word has to appear, so a '
+        + 'shorter search finds more - try one word rather than three.' })
+      : null,
   ]));
-  draw(state.ui.helpQuery ?? '');
 
+  // --- b. Step-by-step how-tos.
+  const howtos = filterHowtos(q());
+  const chosen = howtos.find((h) => h.id === state.ui.helpHowto) || howtos[0] || null;
+  host.appendChild(el('section', { class: 'panel' }, [
+    el('h3', { class: 'guide__h', text: 'Step by step: how do I...' }),
+    el('p', { class: 'note', text: 'Pick an action and follow the steps.' }),
+    howtos.length
+      ? el('div', { class: 'field', style: { marginTop: 'var(--space-3)' } }, [
+        el('label', { class: 'field__label', for: 'help-howto', text: 'Action' }),
+        select(
+          howtos.map((h) => ({ value: h.id, label: `${h.category} - ${h.title}` })),
+          chosen ? chosen.id : '',
+          (v) => { state.ui.helpHowto = v; saveSoon(); redraw(); },
+          { id: 'help-howto', dataset: { field: 'help-howto' } },
+        ),
+      ])
+      : el('p', { class: 'note', text: 'No how-to matches that search.' }),
+    chosen
+      ? el('div', { class: 'guide__steps' }, [
+        el('h4', { class: 'guide__sub', text: chosen.title }),
+        el('ol', { class: 'howto-steps' }, chosen.steps.map((s) => el('li', { text: s }))),
+      ])
+      : null,
+  ]));
 
+  // --- c. FAQs.
+  const faqs = filterFaqs(q());
+  host.appendChild(el('section', { class: 'panel' }, [
+    el('h3', { class: 'guide__h', text: 'Questions' }),
+    faqs.length
+      ? el('div', {}, faqs.map((f) => el('div', { class: 'faq' }, [
+        el('strong', { class: 'faq__q', text: f.q }),
+        el('p', { class: 'faq__a', text: f.a }),
+      ])))
+      : el('p', { class: 'note', text: 'No question matches that search.' }),
+  ]));
+
+  // --- d. The process in words.
+  host.appendChild(el('section', { class: 'panel' }, [
+    el('h3', { class: 'guide__h', text: 'How a palette moves through this' }),
+    el('p', { class: 'note', text: 'The shape of the job, rather than a list of buttons - so '
+      + 'you know where you are in it.' }),
+    el('div', { class: 'guide__lane' }, PROCESS.map((p) => el('div', { class: 'guide__step' }, [
+      el('div', { class: 'guide__step-num', text: String(p.n) }),
+      el('div', { class: 'guide__step-body' }, [
+        el('strong', { text: p.title }),
+        el('p', { class: 'guide__step-text', text: p.body }),
+      ]),
+    ]))),
+  ]));
+
+  // --- e. Mental-model tiles.
+  const ideas = filterIdeas(q());
+  if (ideas.length) {
+    host.appendChild(el('section', { class: 'panel' }, [
+      el('h3', { class: 'guide__h', text: 'Ideas worth knowing' }),
+      el('p', { class: 'note', text: 'The handful of ideas that make the rest obvious.' }),
+      el('div', { class: 'summary-grid' }, ideas.map((i) => statTile(i.label, i.value, { hint: i.hint }))),
+    ]));
+  }
+
+  // --- f. Features worth knowing.
+  const features = filterFeatures(q());
+  if (features.length) {
+    host.appendChild(el('section', { class: 'panel' }, [
+      el('h3', { class: 'guide__h', text: 'Features worth knowing' }),
+      el('p', { class: 'note', text: 'The things you would never find from a label. Every new '
+        + 'feature is added here, so nothing changes quietly.' }),
+      el('div', { class: 'summary-grid' },
+        features.map((f) => statTile(f.label, f.where, { hint: f.hint }))),
+    ]));
+  }
 }
 
 // ---------------------------------------------------------------- state plumbing
@@ -361,13 +433,28 @@ export const ctl = {
     save(); render();
     toast(list.length === 1 ? `${list[0].hex} added` : `${list.length} colours added`);
   },
+  /*
+   * Any colour can go, including the last one.
+   *
+   * There used to be a two-colour floor because the comparisons need a pair. That
+   * protected the code at the user's expense: somebody clearing a palette to start
+   * fresh was stuck with two colours they did not want. The comparisons are what
+   * should yield - each tool now says plainly that it needs another colour, and an
+   * empty palette simply waits for one.
+   */
   removeAt(i) {
-    const p = activePalette();
-    if (p.colors.length <= 2) { toast('Two colours minimum'); return; }
     replaceState(updatePalette(state, state.activeId,
       (q) => ({ ...q, colors: q.colors.filter((_, j) => j !== i) })));
     state.ui.selection = null;
+    state.ui.wheelColour = null;
     save(); render();
+  },
+  clearColors() {
+    replaceState(updatePalette(state, state.activeId, (q) => ({ ...q, colors: [] })));
+    state.ui.selection = null;
+    state.ui.wheelColour = null;
+    save(); render();
+    toast('Palette cleared');
   },
   removeColor(hex) {
     const i = activePalette().colors.findIndex((c) => c.hex.toLowerCase() === hex.toLowerCase());
@@ -382,6 +469,29 @@ export const ctl = {
   setKind(kind) {
     replaceState(updatePalette(state, state.activeId, (p) => ({ ...p, kind })));
     save(); render();
+  },
+  /**
+   * Put a ramp's steps into a palette of their own and open it in Brand.
+   *
+   * A new palette rather than a replacement: the ramp was derived FROM the current
+   * palette, so overwriting it would destroy the thing that produced it. This is
+   * how a monochrome set gets its full pairing matrix - every step of one hue
+   * against every other, which is the question a ramp cannot answer on its own.
+   */
+  rampToPalette(name, steps) {
+    replaceState(addPalette(state, {
+      name: `${name} steps`,
+      kind: 'brand',
+      colors: steps.map((s, i) => ({
+        name: s.isSeed ? `${i + 1} Brand` : String(i + 1),
+        hex: s.hex,
+      })),
+    }));
+    state.ui.tool = 'brand';
+    state.ui.selection = null;
+    save();
+    render();
+    toast(`${name} steps opened in Brand`);
   },
   importModel(raw) { replaceState(migrate(raw)); save(); render(); },
   saveFile() {

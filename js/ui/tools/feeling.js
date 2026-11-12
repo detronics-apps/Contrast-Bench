@@ -8,6 +8,7 @@ import { el } from '../dom.js';
 import { emotionWheel, emotionCard } from '../wheel.js';
 import { EMOTION_NAMES, readEmotion, paletteForEmotion, hueForEmotion } from '../../emotion.js';
 import { emotionalRegister, geometries } from '../../palette.js';
+import { needColours } from '../views.js';
 import { explainEmotion } from '../explain.js';
 
 export const meta = { id: 'feeling', label: 'Emotion', kind: 'any' };
@@ -15,6 +16,9 @@ export const meta = { id: 'feeling', label: 'Emotion', kind: 'any' };
 export function render(host, ctx) {
   const { palette, colors, ui, set, level } = ctx;
   const items = palette.colors;
+
+  const gap = needColours(ctx, 1, 'The wheel');
+  if (gap) { host.appendChild(gap); return; }
   const selected = ui.emotion && EMOTION_NAMES.includes(ui.emotion) ? ui.emotion : 'Loyalty';
 
   const register = emotionalRegister(colors);
@@ -31,15 +35,25 @@ export function render(host, ctx) {
         + 'and which of those colours can actually carry text.' }),
     ]),
   ]));
+  const picked = Number.isInteger(ui.wheelColour) && items[ui.wheelColour]
+    ? ui.wheelColour : null;
+
   wheelPanel.appendChild(el('div', { class: 'panel__body wheelbody' }, [
     el('div', { class: 'wheelwrap' }, [
       emotionWheel({
-        colors,
+        colors: items,
         selected,
-        onSelect: (name) => set({ emotion: name }),
+        pickedIndex: picked,
+        onSelect: (name) => set({ emotion: name, wheelColour: null }),
+        onPick: (i) => set({ wheelColour: i === picked ? null : i }),
       }),
+      el('p', { class: 'note', text: 'Angle is hue and distance from the centre is saturation - '
+        + 'nothing else. Lightness is not a direction on this wheel; it is what you see in each '
+        + 'dot. Click a dot for that colour, or a segment for the emotion.' }),
     ]),
-    selectedPane(selected, ctx),
+    picked === null
+      ? selectedPane(selected, ctx)
+      : pickedPane(items[picked], picked, ctx),
   ]));
   host.appendChild(wheelPanel);
 
@@ -67,6 +81,53 @@ export function render(host, ctx) {
       card.querySelector('.emo__hex').textContent = `${c.name} - ${c.hex}`;
       return card;
     })));
+}
+
+/** The panel beside the wheel when a plotted dot is the thing being inspected. */
+function pickedPane(colour, index, ctx) {
+  const reading = readEmotion(colour.hex);
+
+  return el('div', { class: 'wheelside' }, [
+    el('div', { class: 'row', style: { alignItems: 'center', marginBottom: 'var(--space-3)' } }, [
+      el('h3', { class: 'wheelside__h', text: colour.name }),
+      el('button', {
+        class: 'btn btn--small', type: 'button', text: 'Back to the wheel',
+        title: 'Show the selected emotion again instead of this colour',
+        on: { click: () => ctx.set({ wheelColour: null }) },
+      }),
+    ]),
+    el('div', { class: 'pick' }, [
+      el('span', { class: 'pick__sw', style: { background: colour.hex } }),
+      el('span', {}, [
+        el('code', { text: colour.hex }),
+        el('br'),
+        el('small', { text: reading.neutral
+          ? 'Neutral - too little colour for hue to mean anything'
+          : `hue ${reading.hue.toFixed(0)}, saturation ${reading.saturation.toFixed(0)}%, `
+            + `lightness ${reading.lightness.toFixed(0)}%` }),
+      ]),
+      el('button', { class: 'btn btn--small', type: 'button', text: 'Copy',
+        on: { click: () => ctx.copy(colour.hex) } }),
+    ]),
+    el('p', { class: 'wheelside__p', text: reading.blend
+      ? `Sits between ${reading.primary.name} and ${reading.secondary.name}, nearer `
+        + `${reading.primary.name} - ${Math.round(reading.near[0].weight * 100)}% of the way onto it.`
+      : `Sits squarely on ${reading.primary.name}.` }),
+    el('div', { class: 'emo__words' },
+      reading.primary.words.map((w) => el('span', { class: 'emo__word', text: w }))),
+    el('p', { class: 'wheelside__p', text: reading.primary.signal }),
+    el('p', { class: 'wheelside__p is-warn', text: reading.primary.caution }),
+
+    el('h4', { class: 'wheelside__sub', text: 'What its own saturation and lightness do' }),
+    ...reading.modifiers.map((m) => el('p', { class: 'wheelside__p', text: m.text })),
+
+    el('button', {
+      class: 'btn', type: 'button', text: `Show the ${reading.primary.name} range`,
+      title: 'Switch the panel to this emotion and its usable colours',
+      on: { click: () => ctx.set({ emotion: reading.primary.name, wheelColour: null }) },
+    }),
+    el('p', { class: 'caveat', text: reading.caveat }),
+  ]);
 }
 
 /** The panel beside the wheel: the chosen emotion, and usable colours for it. */

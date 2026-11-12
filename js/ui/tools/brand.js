@@ -1,7 +1,7 @@
 // Brand mode: can these colours carry text against each other?
 
 import { el, chips } from '../dom.js';
-import { statTiles, findingsList, matrix, matrixLegend, rankedList, reachList, inspector } from '../views.js';
+import { statTiles, findingsList, matrix, matrixLegend, rankedList, reachList, inspector, needColours } from '../views.js';
 import { judgeAll, summarise, reach } from '../../wcag.js';
 import { findings, recommendations, headline, roles, ROLE_LABEL } from '../../palette.js';
 import { suggestions } from '../../suggest.js';
@@ -14,6 +14,9 @@ export const meta = { id: 'brand', label: 'Brand', kind: 'brand' };
 export function render(host, ctx) {
   const { palette, colors, ui, set, level } = ctx;
   const items = palette.colors;
+  const gap = needColours(ctx, 2, 'The pairing matrix');
+  if (gap) { host.appendChild(gap); return; }
+
   const s = summarise(colors);
   const pairs = judgeAll(colors);
 

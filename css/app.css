@@ -38,13 +38,6 @@
 .bullets { margin: 0 0 var(--space-4); padding-left: 1.2em; }
 .bullets li { font-size: 13px; color: var(--text-dim); line-height: 1.55; margin-bottom: var(--space-2); }
 
-.faq { border-bottom: 1px solid var(--border); padding: var(--space-2) 0; }
-.faq summary {
-  cursor: pointer; font-size: 13px; font-weight: 500;
-  display: flex; align-items: baseline; gap: var(--space-3);
-}
-.faq summary::-webkit-details-marker { display: none; }
-.faq p { margin: var(--space-2) 0 0; font-size: 12px; color: var(--text-dim); line-height: 1.55; }
 
 /* ---------------------------------------------------------------- tiles */
 
@@ -343,13 +336,25 @@
 
 /* ---------------------------------------------------------------- wheel */
 
-.wheelbody { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+/* The wheel takes the room; the panel beside it gets what is left. */
+.wheelbody {
+  display: grid; grid-template-columns: minmax(420px, 1.4fr) minmax(250px, 1fr);
+  gap: var(--space-5); align-items: start;
+}
 .wheelwrap { color: var(--text); }
-.wheel { width: 100%; height: auto; display: block; max-width: 520px; }
+.wheel { width: 100%; height: auto; display: block; max-width: 780px; }
 .wheel__sector { cursor: pointer; }
 .wheel__sector:hover { filter: brightness(1.08); }
 .wheel__sector:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
 .wheel__label { font-family: var(--font); pointer-events: none; }
+
+.wheel__plot { cursor: pointer; }
+.wheel__plot:hover circle { stroke-width: 4; }
+.wheel__plot:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+/* The name is drawn twice: a thick panel-coloured stroke underneath, then the
+   text over it, so it stays readable on any hue it happens to land on. */
+.wheel__plotname { font-family: var(--font); pointer-events: none; fill: var(--text); stroke: none; }
+.wheel__plotname--halo { fill: none; stroke: var(--panel); }
 .wheelside__h { margin: 0; font-size: 19px; font-weight: 650; }
 .wheelside__fam { margin: 2px 0 var(--space-3); font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
 .wheelside__p { font-size: 13px; line-height: 1.55; color: var(--text-dim); margin: 0 0 var(--space-2); }
@@ -463,16 +468,64 @@
 @media (max-width: 640px) {
   /* Footer links are text, so they get vertical padding rather than a box. */
   .linkish { padding: 13px 0; }
+/* ---------------------------------------------------------------- empty state */
+
+.empty__title { margin: 0 0 var(--space-2); font-size: 15px; font-weight: 650; }
+.empty__body { margin: 0 0 var(--space-4); font-size: 13px; color: var(--text-dim);
+  line-height: 1.55; max-width: 62ch; }
+.empty__body + .row { justify-content: flex-start; }
+.empty__body + .row .btn--primary { width: auto; }
+
+/* ---------------------------------------------------------------- the guide */
+/* Copied from the 3DPrintCost Bench guide, which how-to-and-onboarding.md names
+   as the worked example. Same classes, same shapes - so the guide reads the same
+   in every app even though the content is different. */
+
+.guide__h { margin: 0 0 var(--space-1); font-size: 15px; font-weight: 650; }
+.guide__sub { margin: var(--space-4) 0 0; font-size: 14px; font-weight: 650; }
+.guide__steps { margin-top: var(--space-3); }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
-/* ---------------------------------------------------------------- help search */
-
-.helpresults { display: grid; gap: 0; }
-/* Fixed width rather than a minimum: "QUESTION" is wider than "HOW TO", and a
-   min-width let the longer one butt straight up against the title. */
-.faq__kind {
-  flex: 0 0 66px;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-  color: var(--text-faint);
+.stat {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
 }
-.faq p { padding-left: calc(66px + var(--space-3)); }
+.stat__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); }
+.stat__value { font-size: 15px; font-weight: 600; color: var(--text); word-break: break-word; }
+.stat__hint { font-size: 12px; color: var(--text-faint); line-height: 1.5; margin-top: var(--space-1); }
+
+.howto-steps { margin: 6px 0 0; padding-left: 20px; }
+.howto-steps li { margin: 6px 0; line-height: 1.5; font-size: 13px; }
+
+.faq { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.faq:last-child { border-bottom: 0; }
+.faq__q { display: block; margin-bottom: 4px; font-size: 13px; }
+.faq__a { margin: 0; color: var(--text-dim); line-height: 1.5; font-size: 13px; }
+
+.guide__lane { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
+.guide__step {
+  display: flex; gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.guide__step-num {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent-strong);
+}
+.guide__step-body { min-width: 0; }
+.guide__step-body strong { font-size: 13px; }
+.guide__step-text { margin: 2px 0 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; }

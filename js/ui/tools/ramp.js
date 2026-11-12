@@ -6,7 +6,7 @@
 // in its own world.
 
 import { el, chips } from '../dom.js';
-import { findingsList, swatchRun } from '../views.js';
+import { findingsList, swatchRun, needColours } from '../views.js';
 import { analyseRamp, rampFindings, DEFAULT_NEUTRALS, USE } from '../../ramp.js';
 import { GRADE_LABEL } from '../../wcag.js';
 import { readEmotion } from '../../emotion.js';
@@ -18,6 +18,9 @@ const f = (n, d = 2) => n.toFixed(d);
 export function render(host, ctx) {
   const { palette, ui, set, level } = ctx;
   const items = palette.colors;
+
+  const gap = needColours(ctx, 1, 'A ramp');
+  if (gap) { host.appendChild(gap); return; }
 
   host.appendChild(el('p', { class: 'headline',
     text: 'Each colour measured on its own, across its own range of shades and tints, against '
@@ -105,16 +108,24 @@ function rampCard(colour, ctx, level) {
             + ` - the chosen swatch is ${seed.use}` }),
       ]),
       el('div', { class: 'row' }, [
+        el('button', {
+          class: 'btn btn--small', type: 'button',
+          title: 'Put these steps in a palette of their own and open the pairing matrix, '
+            + 'so you can see which shades of this one hue work against each other. '
+            + 'The current palette is kept.',
+          text: 'Compare in Brand',
+          on: { click: () => ctx.ctl.rampToPalette(colour.name, a.ramp) },
+        }),
         a.forLight ? el('button', {
           class: 'btn btn--small', type: 'button',
           title: `${a.forLight.hex} - ${f(a.forLight.onWhite)}:1 on white`,
-          text: `Copy light-ground ${a.forLight.hex}`,
+          text: `Copy light ${a.forLight.hex}`,
           on: { click: () => ctx.copy(a.forLight.hex) },
         }) : null,
         a.forDark ? el('button', {
           class: 'btn btn--small', type: 'button',
           title: `${a.forDark.hex} - ${f(a.forDark.onBlack)}:1 on black`,
-          text: `Copy dark-ground ${a.forDark.hex}`,
+          text: `Copy dark ${a.forDark.hex}`,
           on: { click: () => ctx.copy(a.forDark.hex) },
         }) : null,
       ]),

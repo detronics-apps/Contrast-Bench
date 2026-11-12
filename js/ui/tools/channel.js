@@ -1,7 +1,7 @@
 // Channel mode: can a viewer tell these categories apart?
 
 import { el, chips } from '../dom.js';
-import { statTiles, findingsList, swatchRun } from '../views.js';
+import { statTiles, findingsList, swatchRun, needColours } from '../views.js';
 import {
   analyse, channelFindings, findSeparableColour, COLLAPSE_DE, GREY_RATIO, LARGE_TEXT,
 } from '../../channel.js';
@@ -15,10 +15,8 @@ export function render(host, ctx) {
   const { palette, ui, set, level } = ctx;
   const entries = palette.colors;
 
-  if (entries.length < 2) {
-    host.appendChild(el('p', { class: 'note', text: 'Add at least two colours to compare.' }));
-    return;
-  }
+  const gap = needColours(ctx, 2, 'Telling categories apart');
+  if (gap) { host.appendChild(gap); return; }
 
   const a = analyse(entries);
   const d = a.distinguish;
