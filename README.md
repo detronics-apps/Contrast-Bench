@@ -3,7 +3,7 @@
 A browser tool for judging colours three ways: whether they can carry text, whether a viewer can
 tell them apart, and what they are likely to communicate.
 
-**Live:** https://detronics-apps.github.io/Contrast-Bench/
+**Live:** https://detronics-apps.github.io/ContrastBench/
 
 ## What it does
 
