@@ -199,3 +199,16 @@ export function download(blob, filename) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * A character from its code point, so source files stay pure ASCII.
+ *
+ * Pitfall 25: a tool that rewrites a file can garble or strip a literal
+ * non-ASCII character, and an invisible one (a variation selector) goes
+ * without trace. Building glyphs from code points removes the whole class.
+ */
+export const ch = (...codes) => String.fromCharCode(...codes);
+export const GLYPH = {
+  times: ch(0x00d7),     // multiplication sign, the close control
+  chevron: ch(0x203a),   // single right-pointing angle quote
+};

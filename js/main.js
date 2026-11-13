@@ -9,7 +9,7 @@ import {
   load, save, saveSoon, state, activePalette, activeColors, shareLink,
   addPalette, removePalette, updatePalette, migrate, replaceState,
 } from './state.js';
-import { el, clear, toast, download, select } from './ui/dom.js';
+import { el, clear, toast, download, select, ch, GLYPH } from './ui/dom.js';
 import { captureFocus, restoreFocus } from './ui/patterns.js';
 import { paletteEditor, exportsSection } from './ui/sidebar.js';
 import { statTile } from './ui/views.js';
@@ -23,7 +23,7 @@ import * as ramp from './ui/tools/ramp.js';
 import * as channel from './ui/tools/channel.js';
 import * as feeling from './ui/tools/feeling.js';
 
-export const APP_VERSION = '0.5.1';
+export const APP_VERSION = '0.5.2';
 
 const TOOLS = { brand, ramp, channel, feeling };
 
@@ -84,10 +84,30 @@ function applyTheme() {
 
 const THEME_ORDER = ['system', 'light', 'dark'];
 const THEME_LABEL = { system: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' };
+
+/*
+ * Built from code points rather than typed, and the source stays pure ASCII.
+ *
+ * U+FE0E is a variation selector: invisible, and silently lost the moment the
+ * line passes through anything that rewrites the file - which has already
+ * happened to this line once. Without it some platforms render the sun and moon
+ * as colour emoji, which ignore the button's colour and look wrong in one theme.
+ * The half-disc needs no selector; it has no emoji form.
+ *
+ * The skill asks for \\uXXXX escapes. The editor tooling here decodes those back
+ * into literals on write, so the same guarantee is bought with fromCharCode,
+ * which nothing can quietly normalise.
+ */
+const TEXT_PRESENTATION = String.fromCharCode(0xfe0e);
+
 // Written as escapes on purpose: U+FE0E is invisible, and a literal one is silently
 // lost the moment this line is copied through anything that strips it. It asks for
 // text presentation, without which some platforms render these as colour emoji.
-const THEME_GLYPH = { system: '◐', light: '☀︎', dark: '☾︎' };
+const THEME_GLYPH = {
+  system: ch(0x25d0),                      // half disc, follows the OS
+  light: ch(0x2600) + TEXT_PRESENTATION,   // sun
+  dark: ch(0x263e) + TEXT_PRESENTATION,    // moon
+};
 
 const icon = (paths) => '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" '
   + 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
@@ -240,7 +260,7 @@ function openModal(title, paragraphs) {
         el('button', {
           class: 'btn btn--icon modal__close', type: 'button',
           'aria-label': 'Close', title: 'Close',
-        }, [el('span', { class: 'btn__glyph', 'aria-hidden': 'true', text: '×' })]),
+        }, [el('span', { class: 'btn__glyph', 'aria-hidden': 'true', text: GLYPH.times })]),
       ]),
       el('div', { class: 'modal__body' }, paragraphs.map((p) => el('p', { text: p }))),
     ]),

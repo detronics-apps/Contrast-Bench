@@ -46,3 +46,53 @@ Built on `detronics-app` **r10**.
   Nothing in a colour app parses engineering notation or snaps to a preferred-value series, and the
   formatter was unused too. Dead code in a repo somebody else reads is a cost, so they went, along
   with their 30 tests. Re-copy from the skill if a later feature needs one.
+
+## Pitfall audit (pitfalls.md, read 2026-11-13)
+
+Checked this app against all 26. Three were live and are fixed; the rest either do
+not apply or were already right.
+
+**Were live, now fixed**
+
+- **14 / 21 - a caller's default overriding remembered UI state.** Collapsing a
+  sidebar section and then editing anything sprang it back open: `open` was being
+  re-applied on every render and the reader's choice was never stored. Measured
+  before the fix (`afterClosing: false` then `afterARender: "true"`). Sections now
+  read `state.ui.sections[id]`, treat an absent key as "never set" so a stored
+  `false` survives, and save without re-rendering.
+- **25 - literal non-ASCII in source.** The theme glyph line had been rewritten
+  into literal characters at some point, including the invisible U+FE0E variation
+  selector - exactly the fragility the pitfall describes, one rewrite from being
+  lost. All glyphs now come from `GLYPH`/`ch()` in `js/ui/dom.js`, built from code
+  points, and no file of mine carries a literal non-ASCII character.
+  *Deviation:* the skill asks for `\uXXXX` escapes. The editor tooling here decodes
+  those back into literals on write, so `String.fromCharCode` buys the same
+  guarantee and nothing can normalise it away.
+- **7 / 4 - SVG text outside the viewBox.** Wheel labels were clipped at both
+  sides; the viewBox is now wider than the wheel and a `getBBox` check confirms
+  nothing overhangs.
+
+**Checked and already right**
+
+- 2 flex children shrinking (`.viewport > *` is `flex: 0 0 auto`, from the house layout)
+- 8 state migrations (versioned model, migration, `pick()` drops undefined, tested)
+- 9 raw floats in prose (tests reject `\d+\.\d{4,}` in every findings string)
+- 23 seeded examples doubling (fixed ids, tested)
+- 24 a list inside children (the scaffold's `append()` flattens)
+
+**Not applicable**
+
+- 3 canvas magnification, 5 lead gaps, 6 arrowheads, 10 label collision by
+  construction (the wheel staggers colliding plot labels), 11 absolute epsilon,
+  12 axis rounding, 13 build-time flags, 17 NaN defaulting chains, 18-20 drawn
+  geometry invariants - this app draws no mechanism.
+
+**Skipped, with the reason**
+
+- **26 - a source-level test for calls to names that are never imported.** Written
+  and then removed: it produced 20 false positives on this codebase because the
+  detector cannot see object-literal method shorthand (`setActive(id) {` inside
+  the `ctl` object) or hex codes inside strings. Making it accurate needs a real
+  parser. A test with 20 false alarms is turned off within a week, which is worse
+  than not having one, so this app relies on the runtime error banner and the
+  browser pass that drives every tab instead.

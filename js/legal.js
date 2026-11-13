@@ -31,7 +31,7 @@ export const legal = Object.freeze({
       'A share link encodes the palette in the URL fragment - the part after the #. Fragments are '
         + 'never transmitted to a web server, so a link can be sent without the colours passing '
         + 'through anyone else\'s infrastructure. Whoever you send the link to can of course read it.',
-      `Published by ${LICENCE_HOLDER}. Source and issues: github.com/detronics-apps/ContrastBench`,
+      `Published by ${LICENCE_HOLDER}. Source and issues: github.com/detronics-apps/Contrast-Bench`,
     ],
   },
 

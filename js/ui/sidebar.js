@@ -1,23 +1,39 @@
 // The palette editor and the exports, in house folding sections.
 
-import { el, select, toast, download } from './dom.js';
+import { el, select, toast, download, GLYPH } from './dom.js';
+import { state, saveSoon } from '../state.js';
 import { harvest, normalise, isColor } from '../color.js';
 
-/** A folding section with the house head/body structure. */
+/**
+ * A folding section with the house head/body structure.
+ *
+ * `open` is the INITIAL state only. A choice the reader has made always wins,
+ * or the panel folds itself back open on every render - which is what happened:
+ * collapsing Palette and then editing a colour sprang it open again, because the
+ * caller's default was re-applied each time. The store must be able to say "never
+ * set", so an absent key is distinguished from a stored false.
+ */
 function section(id, title, body, { open = true, summary = null } = {}) {
-  const host = el('section', { class: 'section', dataset: { open: String(open), section: id } });
+  const remembered = state.ui.sections ? state.ui.sections[id] : undefined;
+  const showing = remembered === undefined ? open : remembered;
+
+  const host = el('section', { class: 'section', dataset: { open: String(showing), section: id } });
   const head = el('button', {
     class: 'section__head', type: 'button',
-    'aria-expanded': String(open),
+    'aria-expanded': String(showing),
     on: {
       click: () => {
         const next = host.dataset.open !== 'true';
         host.dataset.open = String(next);
         head.setAttribute('aria-expanded', String(next));
+        // Remembered chrome is not a state change: store it without re-rendering.
+        if (!state.ui.sections) state.ui.sections = {};
+        state.ui.sections[id] = next;
+        saveSoon();
       },
     },
   }, [
-    el('span', { class: 'section__chevron', 'aria-hidden': 'true', text: '›' }),
+    el('span', { class: 'section__chevron', 'aria-hidden': 'true', text: GLYPH.chevron }),
     el('span', { class: 'section__title', text: title }),
     summary ? el('span', { class: 'section__summary', text: summary }) : null,
   ]);
@@ -63,7 +79,7 @@ export function paletteEditor(ctx) {
     ]),
     el('button', {
       class: 'swatch__kill', type: 'button', title: `Remove ${c.name}`,
-      'aria-label': `Remove ${c.name}`, text: '×',
+      'aria-label': `Remove ${c.name}`, text: GLYPH.times,
       on: { click: () => ctl.removeAt(i) },
     }),
   ])));
